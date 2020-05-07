@@ -11,7 +11,8 @@ import time
 from adb import By
 from adb import Adb
 import file
-
+import xlrd
+from tkinter  import messagebox
 
 class Main:
     def __init__(self, port=None, device=None):
@@ -34,7 +35,7 @@ class Main:
         # 循环首尾 包含首 不包含尾
         self._loop = self._json['loop']
         # 文件路径 手机号码一行一个
-        self._file = self._json['file']
+        self._file_path = self._json['file']
         # 自动切换账号 微信登录 微信预留账号
         self._account = self._json['account']
         # 累计查找结果达到指定个数 会从内存写入到文件
@@ -55,25 +56,25 @@ class Main:
             self._file.dump(_list, key)
 
     def init(self):
-        self._adb.click_by_text_after_refresh('通讯录')
-        self._adb.click_by_text_after_refresh('外部联系人')
-        self._adb.click_by_text_after_refresh('添加')
+        self._adb.click_by_text_after_refresh('新的朋友')
+        self._adb.click_by_text_after_refresh('添加朋友')
         self._adb.click_by_text_after_refresh('微信号/手机号')
 
-    def add_friends(self, phone: str):
-        print('===== 开始查找 ===== ' + phone + ' =====')
+    def add_friends(self, friend):
+        print('===== 开始查找 ===== ' + friend['phone'] + ' =====')
+        self._adb.adb_clear_end()
         self._adb.click_by_text_after_refresh('微信号/手机号')
 
         # 输入号码
-        self._adb.adb_input(phone)
+        self._adb.adb_input(friend['phone'])
         # 点击搜索
-        self._adb.click_by_text_after_refresh('搜索：' + phone)
+        self._adb.click_by_text_after_refresh('搜索:' + friend['phone'])
         print('  ==> 点击搜索 ==>  ')
 
         self._adb.refresh_nodes()
         if self._adb.find_nodes_by_text('查找失败'):
             print('  <== 查找失败 <==  ')
-            self.push('failed', phone + '查找失败')
+            self.push('failed', friend['phone'] + '查找失败')
             self._adb.adb_put_back()
 
             print(' ---- 计算切换账号次数 ----')
@@ -125,7 +126,7 @@ class Main:
                     self._adb.refresh_nodes()
                     if self._adb.find_nodes_by_text('通讯录'):
                         break
-                    time.sleep(2)
+                    time.sleep(1)
 
                 # 回到桌面打开企业微信
                 self._adb.adb_back_to_desktop()
@@ -142,66 +143,84 @@ class Main:
                     self._adb.refresh_nodes()
                     if self._adb.find_nodes_by_text('进入企业 '):
                         break
-                    time.sleep(2)
+                    time.sleep(1)
                 self._adb.click(0)
 
                 while True:
                     self._adb.refresh_nodes()
                     if self._adb.find_nodes_by_text('通讯录'):
                         break
-                    time.sleep(2)
+                    time.sleep(1)
 
                 self.init()
 
         # 查找成功
-        elif self._adb.find_nodes_by_text('添加为联系人'):
+        elif self._adb.find_nodes_by_text('添加到通讯录'):
             self._adb.click(0)
-            self._adb.click_by_text_after_refresh('发送添加邀请')
 
+            self._adb.adb_clear_end()
+            self._adb.abd_input_chinese(friend['msg'])  # 输入中文备注給对方
+
+            # 设置备注
+            self._adb.find_edit_text_nodes()
+            self._adb.click(1)
+            if len(friend['remark']) > 0:
+                self._adb.adb_clear_end()  # 删除原有文本
+            self._adb.abd_input_chinese(friend['remark'])  # 输入中文备注給对方
+
+            self._adb.click_by_text_after_refresh('发送')
             self._adb.refresh_nodes()
-            if self._adb.find_nodes_by_text('发送添加邀请'):
+
+            if self._adb.find_nodes_by_text('验证申请'):
                 print('  <== 发送失败 <==  ')
-                self.push('failed', phone + '发送失败')
+                friend['status']="发送失败"
+                self.push('failed', friend['phone'] + '发送失败')
                 self._adb.adb_put_back()
                 self._adb.adb_put_back()
             else:
                 print(' !! <== 发送成功 <==  ')
-                self.push('success', phone + '发送成功')
+                friend['status']="发送成功"
+                self.push('success', friend['phone'] + '发送成功')
                 self._adb.adb_put_back()
 
         elif self._adb.find_nodes_by_text('发消息'):
             print('  <== 已经是好友 无需再次添加 <==  ')
-            self.push('failed', phone + '已经是好友')
+            friend['status']= "已经是好友"
+            self.push('failed', friend['phone'] + '已经是好友')
             self._adb.adb_put_back()
 
         elif self._adb.find_nodes_by_text('同时拥有微信和企业微信'):
             print('  <== 同时拥有微信和企业微信 <==  ')
-            self.push('failed', phone + '同时拥有微信和企业微信')
+            self.push('failed', friend['phone'] + '同时拥有微信和企业微信')
             self._adb.adb_put_back()
 
         elif self._adb.find_nodes_by_text('该用户不存在') or self._adb.find_nodes_by_text('被搜帐号状态异常，无法显示'):
             print('  <== 该用户不存在 或 帐号异常 <==  ')
-            self.push('failed', phone + '该用户不存在 或 帐号异常')
+            friend['status']= "用户不存在 或 帐号异常"
+            self.push('failed', friend['phone'] + '该用户不存在 或 帐号异常')
             self._adb.adb_put_back()
 
         # 清空已输入的字符
-        self._adb.refresh_nodes()
-        if self._adb.find_nodes('true', By.naf):
-            self._adb.click(1)
+        self._adb.find_edit_text_nodes()
+        self._adb.click(0)
+        self._adb.adb_clear_end()
+        self._adb.adb_clear_end()
 
-    def main(self):
+    def main(self, data, callback):
         self.init()
-
-        if 'file' == self._mode:
-            with self._file.open(self._file) as f:
-                for line in f:
-                    line = file.delete_line_breaks(line)
-                    self.add_friends(line)
-                f.close()
-        elif 'loop' == self._mode:
-            for line in range(int(self._loop[0]), int(self._loop[1])):
-                self.add_friends(str(line))
+        friends = data
+        for friend in friends:
+            try:
+                self.add_friends(friend)
+            except BaseException as e:
+                friend['status']= "添加失败"
+            try:
+                callback(data)
+            except BaseException as e:
+                pass
 
         # 输出最后的添加结果
         self._file.dump(self._success, 'success')
         self._file.dump(self._failed, 'failed')
+        messagebox.showinfo("完成", "全部添加完成")
+

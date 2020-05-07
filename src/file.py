@@ -6,11 +6,15 @@
  @file: file.py
  @time: 2018/11/5 10:59
 """
-
-import os
+#coding:utf-8
+import os,sys
 import json
 import time
 
+# 环境地址
+base_path= os.path.dirname(os.path.dirname(__file__))
+if getattr(sys, 'frozen', False): #是否Bundle Resource
+    base_path = sys._MEIPASS
 
 # 删除每行文字最后的换行符
 def delete_line_breaks(line: str):
@@ -19,7 +23,7 @@ def delete_line_breaks(line: str):
 
 class File:
     def __init__(self):
-        self._basePath = os.path.dirname(__file__)
+        self._basePath = base_path
 
     # 打开文件 替换换行符为 \n
     def open(self, path: str, mode='r'):
@@ -33,13 +37,16 @@ class File:
 
         with self.open(path='/result/' + stamp + '/' + key + '.txt', mode='a') as f:
             for e in _list:
-                f.write(str(e) + '\n')
+                f.write( str(e) + '\n')
             f.close()
         # 清空列表
         _list.clear()
 
     def json(self):
-        with self.open('/config/config.json') as f:
+        path= '/config/config.json'
+        print("json路径")
+        print(path)
+        with self.open(path) as f:
             o = json.load(f)
             f.close()
 

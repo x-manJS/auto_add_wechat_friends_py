@@ -12,13 +12,14 @@ import re
 from plat import adb_path
 from enum import Enum
 import xml.etree.cElementTree as xmlParser
-
+import subprocess
+import file
 
 class By(Enum):
     text = 'text'
     content = 'content-desc'
     naf = 'NAF'
-
+    n_class = 'class'
 
 class Adb:
     def __init__(self, port=None, device=None):
@@ -31,7 +32,7 @@ class Adb:
         # 指定端口 指定设备 组装adb命令
         self._baseShell = adb_path() + 'adb ' + self._p + self._s
         # 获取该文件(adb.py) 所在对文件夹路径
-        self._basePath = os.path.dirname(__file__)
+        self._basePath = file.File()._basePath
 
         # 缓存xml 不需要多此进行文件读取操作
         self._xml = None
@@ -63,12 +64,31 @@ class Adb:
     def adb_input(self, text):
         os.system(self._baseShell + 'shell input text ' + str(text))
 
+    def abd_input_chinese(self, text):
+        os.system(self._baseShell +
+                  'shell am broadcast -a ADB_INPUT_TEXT --es msg ' + str(text))
+
     def adb_refresh(self):
         os.system(self._baseShell + 'shell uiautomator dump /sdcard/dump.xml')
-        os.system(self._baseShell + 'pull /sdcard/dump.xml ' + self._basePath + '/data/dump.xml')
+        os.system(self._baseShell + 'pull /sdcard/dump.xml ' +
+                  self._basePath + '/data/dump.xml')
+
+    def adb_clear_end(self):
+        os.system(self._baseShell + 'shell input keyevent KEYCODE_MOVE_END')
+        os.system(self._baseShell +
+                  "shell input keyevent --longpress $(printf 'KEYCODE_DEL %.5s' {1..250})")
+        os.system(self._baseShell +
+                  "shell input keyevent --longpress $(printf 'KEYCODE_DEL %.5s' {1..250})")
+        os.system(self._baseShell +
+                  "shell input keyevent --longpress $(printf 'KEYCODE_DEL %.5s' {1..250})")
+        os.system(self._baseShell +
+                  "shell input keyevent --longpress $(printf 'KEYCODE_DEL %.5s' {1..250})")
+        os.system(self._baseShell +
+                  "shell input keyevent --longpress $(printf 'KEYCODE_DEL %.5s' {1..250})")
 
     def parse_xml(self):
-        self._xml = xmlParser.ElementTree(file=self._basePath + '/data/dump.xml')
+        self._xml = xmlParser.ElementTree(
+            file=self._basePath + '/data/dump.xml')
 
     def refresh_nodes(self):
         self.adb_refresh()
@@ -90,6 +110,10 @@ class Adb:
 
     def find_nodes_by_text(self, text, index=None):
         return self.find_nodes(text, By.text, index)
+
+    def find_edit_text_nodes(self):
+        self.refresh_nodes()
+        return self.find_nodes('android.widget.EditText', By.n_class)
 
     def find_nodes_by_content(self, content, index=None):
         return self.find_nodes(content, By.content, index)
@@ -134,3 +158,18 @@ class Adb:
     def click_by_content_after_refresh(self, content, index=None):
         self.refresh_nodes()
         self.click_by_content(content, index)
+
+    def check_devices(self):
+        response = os.popen(self._baseShell + 'shell devices').read()
+        print("check authorize", response)
+
+    def install_input_method(self):
+        file_path = self._basePath+ '/resources/ADBKeyboard.apk'
+        os.system(self._baseShell + 'install ' + file_path)
+
+    def uninstall_input_method(self):
+        os.system(self._baseShell + 'uninstall com.android.adbkeyboard')
+
+    def change_to_adb_input_method(self):
+        os.system(self._baseShell +
+                  'shell ime set com.android.adbkeyboard/.AdbIME')

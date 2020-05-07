@@ -1,12 +1,3 @@
-#!/usr/local/bin/python
-# -*- coding:utf-8 -*-
-
-"""
- @author: valor
- @file: run.py
- @time: 2018/11/1 14:22
-"""
-
 import sys
 import getopt
 import platform
@@ -82,9 +73,18 @@ def usages():
          )
 
 
+def output_menus():
+    print("1.安装ADBKeyboard输入法\n")
+    print("2.卸载ADBKeyboard输入法\n")
+    print("3.安装ADBKeyboard输入法\n")
+    print("3.切换到ADBKeyboard输入法\n")
+    print("4.我已按照提示准备好，开始批量添加好友\n")
+    str= input("请选择操作命令")
+
 if __name__ == '__main__':
     if platform.python_version() < str(3.3):
         print("Requires python version greater than 3.3")
         sys.exit(1)
 
-    run(sys.argv[1:])
+    output_menus()
+    

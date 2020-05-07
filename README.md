@@ -2,6 +2,29 @@
 
 > 微信自动发送添加好友请求脚本 python
 
+## 工作准备
+
+1.安装python >3.3
+
+2.手机安装ADBKeyboard.apk(输入法，输入中文用的)
+
+3. 安装xlrd（读取EXCEL用的）
+
+### 用USB连接手机添加好友
+
+以华为手机为例， 设置 -系统 -开发人员选项，开启开发者选项-开启USB调试-开启"仅充电模式下运行ADB调试"
+
+手机USB连接电脑。第一次需要安装驱动。
+
+CMD-进入项目目录
+
+执行 py run.py -d
+
+手机可能会弹出授权 同样
+然后就可以了
+
+
+
 ## 使用指南
 
 * python version > 3.3
@@ -59,6 +82,10 @@
 
 * @huijizyf [「点击转跳github项目」](https://github.com/huijizyf/auto_add_wechat_friends)
 
+## 发布安装包
+
+pyinstaller -F -w index.py
+
 ## 开源协议
 
 Copyright 2018 valord577
@@ -67,3 +94,10 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 
 http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+
+## 用pyinstaller打包成exe
+
+```
+    pyinstaller -F src/index.spec
+```

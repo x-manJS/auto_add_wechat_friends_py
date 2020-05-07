@@ -9,9 +9,9 @@
 
 from os import path
 from platform import system
-
+import file
 
 def adb_path():
     os = system().lower()
-    _path = path.dirname(__file__)
+    _path = file.File()._basePath
     return _path + '/adb/' + os + '/platform-tools/'

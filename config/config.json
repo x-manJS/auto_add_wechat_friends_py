@@ -1,6 +1,6 @@
 {
-	"mode": "loop",
-	"account": ["+8617376509219", "xiaomihehuo"],
+	"mode": "file",
+	"account": ["+8618950498972", "liaozenghui1990"],
 	"loop": [13029620003, 13029620016],
 	"file": "/data/name.txt",
 	"dump": 10,
